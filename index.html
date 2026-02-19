@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Clock — Comparador de Zonas Horarias</title>
+  <meta name="description" content="Compara la hora actual de diferentes ciudades del mundo en tiempo real." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Ambient background orbs -->
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+
+  <header>
+    <div class="header-content">
+      <div class="logo">
+        <span class="logo-icon">🌍</span>
+        <h1>World Clock</h1>
+      </div>
+      <p class="subtitle">Compara la hora de cualquier ciudad del mundo en tiempo real</p>
+    </div>
+  </header>
+
+  <main>
+    <!-- Local time hero -->
+    <section class="local-time-section">
+      <div class="local-time-card">
+        <div class="local-label">Tu hora local</div>
+        <div class="local-clock" id="localClock">--:--:--</div>
+        <div class="local-date" id="localDate">--</div>
+        <div class="local-timezone" id="localTimezone">--</div>
+      </div>
+    </section>
+
+    <!-- Add city -->
+    <section class="add-city-section">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          id="citySearch"
+          placeholder="Buscar ciudad o zona horaria..."
+          autocomplete="off"
+        />
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+    </section>
+
+    <!-- City cards grid -->
+    <section class="cities-grid" id="citiesGrid">
+      <!-- Cards injected by JS -->
+    </section>
+
+    <!-- Comparison table -->
+    <section class="comparison-section" id="comparisonSection" style="display:none;">
+      <h2 class="section-title">Tabla comparativa</h2>
+      <div class="table-wrapper">
+        <table id="comparisonTable">
+          <thead>
+            <tr>
+              <th>Ciudad</th>
+              <th>Hora</th>
+              <th>Fecha</th>
+              <th>Diferencia</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="comparisonBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>World Clock &mdash; Hecho con ☕ &amp; 🌎 | Las horas se actualizan en tiempo real</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
