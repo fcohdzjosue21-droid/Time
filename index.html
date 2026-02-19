@@ -1,116 +1,108 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>World Clock — Comparador de Zonas Horarias</title>
-  <meta name="description" content="Compara la hora actual de diferentes ciudades del mundo en tiempo real con relojes analógicos animados." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa Mundial — Día y Noche en Tiempo Real</title>
+  <meta name="description"
+    content="Visualización interactiva del mundo mostrando las zonas de día y noche en tiempo real con animación suave.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <!-- Ambient background -->
-  <div class="bg-orb bg-orb-1"></div>
-  <div class="bg-orb bg-orb-2"></div>
-  <div class="bg-orb bg-orb-3"></div>
-  <div class="bg-grid"></div>
-
-  <header>
-    <div class="header-content">
-      <div class="logo">
-        <div class="logo-globe">
-          <span class="globe-emoji">🌍</span>
-          <div class="logo-ring"></div>
-        </div>
-        <div>
-          <h1>World Clock</h1>
-          <p class="tagline">Hora mundial en tiempo real</p>
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <div class="header-left">
+        <div class="logo">
+          <span class="logo-icon">🌍</span>
+          <h1>World Day & Night</h1>
         </div>
       </div>
-    </div>
-  </header>
-
-  <main>
-    <!-- Local time hero -->
-    <section class="local-time-section">
-      <div class="local-time-card">
-        <div class="local-label">
-          <span class="pulse-dot"></span>
-          Tu hora local
-        </div>
-        <div class="local-clock-wrapper">
-          <!-- Analog clock -->
-          <div class="analog-clock" id="localAnalog">
-            <div class="clock-face">
-              <div class="clock-marks"></div>
-              <div class="hand hand-hour" id="localHandHour"></div>
-              <div class="hand hand-minute" id="localHandMin"></div>
-              <div class="hand hand-second" id="localHandSec"></div>
-              <div class="clock-center"></div>
-            </div>
+      <div class="header-center">
+        <div class="time-display">
+          <div class="time-block">
+            <span class="time-label">Hora Simulada (UTC)</span>
+            <span class="time-value" id="utcTime">--:--:--</span>
           </div>
-          <!-- Digital clock -->
-          <div class="digital-section">
-            <div class="digital-clock" id="localClock">
-              <span class="digit-group" data-unit="hours">--</span><span class="colon blink">:</span><span class="digit-group" data-unit="minutes">--</span><span class="colon blink">:</span><span class="digit-group" data-unit="seconds">--</span>
-            </div>
-            <div class="local-date" id="localDate">--</div>
-            <div class="local-timezone" id="localTimezone">--</div>
+          <div class="time-block">
+            <span class="time-label">Fecha</span>
+            <span class="time-value" id="dateDisplay">----/--/--</span>
+          </div>
+          <div class="time-block">
+            <span class="time-label">Tu Hora Local</span>
+            <span class="time-value" id="localTime">--:--:--</span>
           </div>
         </div>
       </div>
-    </section>
-
-    <!-- Add city -->
-    <section class="add-city-section">
-      <div class="search-wrapper" id="searchWrapper">
-        <div class="search-icon-wrap">
-          <svg class="search-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div class="header-right">
+        <div class="speed-controls">
+          <span class="speed-label">Velocidad</span>
+          <div class="speed-buttons">
+            <button class="speed-btn active" data-speed="1">1×</button>
+            <button class="speed-btn" data-speed="60">1min/s</button>
+            <button class="speed-btn" data-speed="360">6min/s</button>
+            <button class="speed-btn" data-speed="3600">1h/s</button>
+          </div>
         </div>
-        <input type="text" id="citySearch" placeholder="Buscar ciudad o zona horaria..." autocomplete="off" />
-        <kbd class="search-hint">Esc</kbd>
-        <div class="search-dropdown" id="searchDropdown"></div>
+        <button class="reset-btn" id="resetBtn" title="Volver al tiempo real">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 8a6 6 0 1 1 1.76 4.24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            <path d="M2 12V8h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+          Reset
+        </button>
       </div>
-    </section>
+    </header>
 
-    <!-- Quick-add popular -->
-    <section class="quick-add" id="quickAdd">
-      <p class="quick-label">Populares:</p>
-      <div class="quick-chips" id="quickChips"></div>
-    </section>
-
-    <!-- City cards grid -->
-    <section class="cities-grid" id="citiesGrid"></section>
-
-    <!-- Comparison table -->
-    <section class="comparison-section" id="comparisonSection" style="display:none;">
-      <div class="section-header">
-        <h2 class="section-title">📊 Tabla comparativa</h2>
-        <span class="city-count" id="cityCount">0 ciudades</span>
+    <!-- Main Map -->
+    <main id="mapContainer">
+      <canvas id="mapCanvas"></canvas>
+      <div id="tooltip" class="tooltip hidden"></div>
+      <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Cargando mapa del mundo...</p>
       </div>
-      <div class="table-wrapper">
-        <table id="comparisonTable">
-          <thead>
-            <tr>
-              <th>Ciudad</th>
-              <th>Hora</th>
-              <th>Fecha</th>
-              <th>Diferencia</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody id="comparisonBody"></tbody>
-        </table>
-      </div>
-    </section>
-  </main>
+    </main>
 
-  <footer>
-    <p>World Clock &mdash; Hecho con ☕ &amp; 🌎 | Actualización en tiempo real</p>
-  </footer>
+    <!-- Legend -->
+    <footer id="footer">
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-color" style="background: #4a90d9;"></span>
+          <span>Día</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color" style="background: linear-gradient(90deg, #4a90d9, #1a1a3e);"></span>
+          <span>Crepúsculo</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color" style="background: #0a0a1e;"></span>
+          <span>Noche</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color sun-icon">☀️</span>
+          <span>Punto Sub-solar</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color city-dot"></span>
+          <span>Ciudades</span>
+        </div>
+      </div>
+      <div class="footer-info">
+        <span id="sunInfo">Declinación solar: --°</span>
+      </div>
+    </footer>
+  </div>
 
   <script src="app.js"></script>
 </body>
+
 </html>
