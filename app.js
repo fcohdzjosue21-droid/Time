@@ -1,6 +1,6 @@
 /* ============================================================
-   World Clock — app.js
-   Live world-clock comparison with search, cards, and table.
+   World Clock v2 — app.js
+   Analog + digital clocks, animated digits, search, quick-add
    ============================================================ */
 
 // ── City database ──────────────────────────────────────────
@@ -40,9 +40,17 @@ const CITIES = [
     { name: "Anchorage", country: "Estados Unidos", tz: "America/Anchorage", flag: "🇺🇸" },
 ];
 
-// ── State ──────────────────────────────────────────────────
-let selectedCities = [];
-const DEFAULT_CITIES = [
+const QUICK_ADD_TZS = [
+    "America/New_York",
+    "Europe/London",
+    "Europe/Paris",
+    "Asia/Tokyo",
+    "Australia/Sydney",
+    "Asia/Dubai",
+    "America/Argentina/Buenos_Aires",
+];
+
+const DEFAULT_CITIES_TZ = [
     "America/New_York",
     "Europe/London",
     "Asia/Tokyo",
@@ -50,83 +58,130 @@ const DEFAULT_CITIES = [
     "America/Argentina/Buenos_Aires",
 ];
 
-// ── DOM refs ───────────────────────────────────────────────
-const localClockEl = document.getElementById("localClock");
-const localDateEl = document.getElementById("localDate");
-const localTzEl = document.getElementById("localTimezone");
-const searchInput = document.getElementById("citySearch");
-const dropdown = document.getElementById("searchDropdown");
-const citiesGrid = document.getElementById("citiesGrid");
-const compSection = document.getElementById("comparisonSection");
-const compBody = document.getElementById("comparisonBody");
+// ── State ──────────────────────────────────────────────────
+let selectedCities = [];
+let prevDigits = { hours: "", minutes: "", seconds: "" };
+
+// ── DOM ────────────────────────────────────────────────────
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+const localClockEl = $("#localClock");
+const localDateEl = $("#localDate");
+const localTzEl = $("#localTimezone");
+const localHandH = $("#localHandHour");
+const localHandM = $("#localHandMin");
+const localHandS = $("#localHandSec");
+const searchInput = $("#citySearch");
+const dropdown = $("#searchDropdown");
+const citiesGrid = $("#citiesGrid");
+const compSection = $("#comparisonSection");
+const compBody = $("#comparisonBody");
+const quickChips = $("#quickChips");
+const cityCountEl = $("#cityCount");
 
 // ── Helpers ────────────────────────────────────────────────
-function pad(n) { return String(n).padStart(2, "0"); }
+const pad = (n) => String(n).padStart(2, "0");
+const tzId = (tz) => tz.replace(/\//g, "-");
 
 function timeInTz(tz) {
     return new Date(new Date().toLocaleString("en-US", { timeZone: tz }));
 }
 
-function formatTime(date) {
-    return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+function formatTime(d) {
+    return { h: pad(d.getHours()), m: pad(d.getMinutes()), s: pad(d.getSeconds()) };
 }
 
-function formatDate(date) {
+function formatTimeStr(d) {
+    const { h, m, s } = formatTime(d);
+    return `${h}:${m}:${s}`;
+}
+
+function formatDate(d) {
     const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
     const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function isDaytime(date) {
-    const h = date.getHours();
+function isDaytime(d) {
+    const h = d.getHours();
     return h >= 6 && h < 20;
 }
 
 function getUtcOffset(tz) {
-    const now = new Date();
     const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone: tz,
-        timeZoneName: "shortOffset",
-    }).formatToParts(now);
-    const offsetPart = parts.find(p => p.type === "timeZoneName");
-    return offsetPart ? offsetPart.value : "";
+        timeZone: tz, timeZoneName: "shortOffset",
+    }).formatToParts(new Date());
+    const p = parts.find((x) => x.type === "timeZoneName");
+    return p ? p.value : "";
 }
 
 function diffHoursFromLocal(tz) {
     const now = new Date();
     const local = new Date(now.toLocaleString("en-US"));
     const remote = new Date(now.toLocaleString("en-US", { timeZone: tz }));
-    const diffMs = remote - local;
-    const diffH = diffMs / 3_600_000;
-    return diffH;
+    return (remote - local) / 3_600_000;
 }
 
 function diffLabel(h) {
     if (h === 0) return "Misma hora";
     const sign = h > 0 ? "+" : "";
     const abs = Math.abs(h);
-    const hours = Math.floor(abs);
-    const mins = Math.round((abs - hours) * 60);
+    const hrs = Math.floor(abs);
+    const mins = Math.round((abs - hrs) * 60);
     if (mins === 0) return `${sign}${h}h`;
-    return `${sign}${h > 0 ? "" : "-"}${hours}h ${mins}m`;
+    return `${sign}${h > 0 ? "" : "-"}${hrs}h ${mins}m`;
 }
 
-// ── Local clock ────────────────────────────────────────────
+// ── Analog clock hands ─────────────────────────────────────
+function setHands(hourEl, minEl, secEl, date) {
+    const h = date.getHours() % 12;
+    const m = date.getMinutes();
+    const s = date.getSeconds();
+    const ms = date.getMilliseconds();
+
+    const secDeg = (s + ms / 1000) * 6;
+    const minDeg = m * 6 + s * 0.1;
+    const hourDeg = h * 30 + m * 0.5;
+
+    hourEl.style.transform = `rotate(${hourDeg}deg)`;
+    minEl.style.transform = `rotate(${minDeg}deg)`;
+    secEl.style.transform = `rotate(${secDeg}deg)`;
+}
+
+// ── Update local clock ─────────────────────────────────────
 function updateLocalClock() {
     const now = new Date();
-    localClockEl.textContent = formatTime(now);
+    const { h, m, s } = formatTime(now);
+
+    // Update digit groups with pop animation
+    const groups = localClockEl.querySelectorAll(".digit-group");
+    const vals = [h, m, s];
+    const keys = ["hours", "minutes", "seconds"];
+    groups.forEach((el, i) => {
+        if (el.textContent !== vals[i]) {
+            el.textContent = vals[i];
+            el.classList.remove("changed");
+            // Force reflow
+            void el.offsetWidth;
+            el.classList.add("changed");
+        }
+    });
+
     localDateEl.textContent = formatDate(now);
     localTzEl.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // Analog
+    setHands(localHandH, localHandM, localHandS, now);
 }
 
-// ── Search / Dropdown ──────────────────────────────────────
+// ── Search ─────────────────────────────────────────────────
 searchInput.addEventListener("input", () => {
     const q = searchInput.value.trim().toLowerCase();
     if (!q) { dropdown.classList.remove("show"); return; }
 
-    const results = CITIES.filter(c => {
-        const alreadyAdded = selectedCities.some(s => s.tz === c.tz);
-        if (alreadyAdded) return false;
+    const results = CITIES.filter((c) => {
+        if (selectedCities.some((s) => s.tz === c.tz)) return false;
         return (
             c.name.toLowerCase().includes(q) ||
             c.country.toLowerCase().includes(q) ||
@@ -134,34 +189,69 @@ searchInput.addEventListener("input", () => {
         );
     }).slice(0, 8);
 
-    if (!results.length) { dropdown.classList.remove("show"); return; }
+    if (!results.length) {
+        dropdown.innerHTML = `<div class="dropdown-item" style="color:var(--text-dim);pointer-events:none">Sin resultados</div>`;
+        dropdown.classList.add("show");
+        return;
+    }
 
-    dropdown.innerHTML = results
-        .map(
-            (c, i) => `
-    <div class="dropdown-item" data-idx="${i}" data-tz="${c.tz}">
+    dropdown.innerHTML = results.map((c, i) => {
+        const t = timeInTz(c.tz);
+        return `
+    <div class="dropdown-item" data-idx="${i}">
       <span class="flag">${c.flag}</span>
-      <span class="city-name">${c.name}</span>
-      <span class="tz-name">${c.country} · ${c.tz}</span>
-    </div>`
-        )
-        .join("");
+      <div class="city-info">
+        <span class="city-name">${c.name}</span>
+        <span class="tz-name">${c.country} · ${c.tz}</span>
+      </div>
+      <span class="preview-time">${formatTimeStr(t)}</span>
+    </div>`;
+    }).join("");
 
     dropdown.classList.add("show");
 
     dropdown.querySelectorAll(".dropdown-item").forEach((el) => {
         el.addEventListener("click", () => {
-            const city = results[+el.dataset.idx];
-            addCity(city);
-            searchInput.value = "";
-            dropdown.classList.remove("show");
+            const idx = +el.dataset.idx;
+            if (idx >= 0 && results[idx]) {
+                addCity(results[idx]);
+                searchInput.value = "";
+                dropdown.classList.remove("show");
+            }
         });
     });
+});
+
+searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        searchInput.value = "";
+        dropdown.classList.remove("show");
+        searchInput.blur();
+    }
 });
 
 document.addEventListener("click", (e) => {
     if (!e.target.closest(".search-wrapper")) dropdown.classList.remove("show");
 });
+
+// ── Quick-add chips ────────────────────────────────────────
+function renderQuickChips() {
+    quickChips.innerHTML = QUICK_ADD_TZS.map((tz) => {
+        const c = CITIES.find((x) => x.tz === tz);
+        if (!c) return "";
+        const added = selectedCities.some((s) => s.tz === tz);
+        return `<button class="chip ${added ? "added" : ""}" data-tz="${tz}">
+      <span class="chip-flag">${c.flag}</span> ${c.name}
+    </button>`;
+    }).join("");
+
+    quickChips.querySelectorAll(".chip:not(.added)").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const c = CITIES.find((x) => x.tz === btn.dataset.tz);
+            if (c) addCity(c);
+        });
+    });
+}
 
 // ── City management ────────────────────────────────────────
 function addCity(city) {
@@ -178,100 +268,128 @@ function removeCity(tz) {
 }
 
 function saveCities() {
-    localStorage.setItem(
-        "wc_cities",
-        JSON.stringify(selectedCities.map((c) => c.tz))
-    );
+    localStorage.setItem("wc_cities_v2", JSON.stringify(selectedCities.map((c) => c.tz)));
 }
 
 function loadCities() {
-    const raw = localStorage.getItem("wc_cities");
-    let tzList = raw ? JSON.parse(raw) : DEFAULT_CITIES;
-    selectedCities = tzList
-        .map((tz) => CITIES.find((c) => c.tz === tz))
-        .filter(Boolean);
+    const raw = localStorage.getItem("wc_cities_v2");
+    const list = raw ? JSON.parse(raw) : DEFAULT_CITIES_TZ;
+    selectedCities = list.map((tz) => CITIES.find((c) => c.tz === tz)).filter(Boolean);
 }
 
-// ── Render ─────────────────────────────────────────────────
+// ── Render cards ───────────────────────────────────────────
 function renderCards() {
-    citiesGrid.innerHTML = selectedCities
-        .map((c) => {
-            const t = timeInTz(c.tz);
-            const day = isDaytime(t);
-            const diff = diffHoursFromLocal(c.tz);
-            return `
-      <div class="city-card" id="card-${c.tz.replace(/\//g, '-')}">
-        <div class="card-header">
-          <div class="card-city">
-            <span class="card-flag">${c.flag}</span>
-            <div>
-              <div class="card-name">${c.name}</div>
-              <div class="card-country">${c.country}</div>
-            </div>
-          </div>
-          <button class="remove-btn" data-tz="${c.tz}" title="Quitar">✕</button>
-        </div>
-        <div class="card-time" data-tz="${c.tz}">${formatTime(t)}</div>
-        <div class="card-date" data-tz-date="${c.tz}">${formatDate(t)}</div>
-        <div class="card-meta">
-          <span class="badge ${day ? "badge-day" : "badge-night"}">${day ? "☀️ Día" : "🌙 Noche"}</span>
-          <span class="badge badge-diff">${diffLabel(diff)}</span>
-          <span class="badge" style="background:rgba(255,255,255,0.05);color:var(--text-dim)">${getUtcOffset(c.tz)}</span>
-        </div>
-      </div>`;
-        })
-        .join("");
+    citiesGrid.innerHTML = selectedCities.map((c, i) => {
+        const t = timeInTz(c.tz);
+        const tf = formatTime(t);
+        const day = isDaytime(t);
+        const diff = diffHoursFromLocal(c.tz);
+        const id = tzId(c.tz);
 
-    // Bind remove buttons
+        return `
+    <div class="city-card" style="animation-delay:${i * 0.07}s">
+      <div class="daynight-indicator ${day ? "daynight-day" : "daynight-night"}"></div>
+      <div class="card-header">
+        <div class="card-city">
+          <span class="card-flag">${c.flag}</span>
+          <div>
+            <div class="card-name">${c.name}</div>
+            <div class="card-country">${c.country}</div>
+          </div>
+        </div>
+        <button class="remove-btn" data-tz="${c.tz}" title="Quitar">✕</button>
+      </div>
+
+      <div class="card-time-row">
+        <div class="mini-analog" id="mini-${id}">
+          <div class="clock-face">
+            <div class="hand hand-hour"   id="mh-${id}"></div>
+            <div class="hand hand-minute" id="mm-${id}"></div>
+            <div class="hand hand-second" id="ms-${id}"></div>
+            <div class="clock-center"></div>
+          </div>
+        </div>
+        <div class="card-time" data-tz="${c.tz}">
+          ${tf.h}:${tf.m}<span class="card-seconds">:${tf.s}</span>
+        </div>
+      </div>
+
+      <div class="card-date" data-tz-date="${c.tz}">${formatDate(t)}</div>
+      <div class="card-badges">
+        <span class="badge ${day ? "badge-day" : "badge-night"}">${day ? "☀️ Día" : "🌙 Noche"}</span>
+        <span class="badge badge-diff">${diffLabel(diff)}</span>
+        <span class="badge badge-utc">${getUtcOffset(c.tz)}</span>
+      </div>
+    </div>`;
+    }).join("");
+
+    // Bind remove
     citiesGrid.querySelectorAll(".remove-btn").forEach((btn) => {
         btn.addEventListener("click", () => removeCity(btn.dataset.tz));
     });
 }
 
+// ── Render table ───────────────────────────────────────────
 function renderTable() {
     if (!selectedCities.length) {
         compSection.style.display = "none";
         return;
     }
     compSection.style.display = "block";
+    cityCountEl.textContent = `${selectedCities.length} ciudad${selectedCities.length > 1 ? "es" : ""}`;
 
-    compBody.innerHTML = selectedCities
-        .map((c) => {
-            const t = timeInTz(c.tz);
-            const day = isDaytime(t);
-            const diff = diffHoursFromLocal(c.tz);
-            return `
-      <tr>
-        <td>${c.flag} ${c.name}</td>
-        <td style="font-weight:700;font-variant-numeric:tabular-nums" data-tz-table="${c.tz}">${formatTime(t)}</td>
-        <td data-tz-table-date="${c.tz}">${formatDate(t)}</td>
-        <td>${diffLabel(diff)}</td>
-        <td>${day ? "☀️ Día" : "🌙 Noche"}</td>
-      </tr>`;
-        })
-        .join("");
+    compBody.innerHTML = selectedCities.map((c) => {
+        const t = timeInTz(c.tz);
+        const day = isDaytime(t);
+        const diff = diffHoursFromLocal(c.tz);
+        return `
+    <tr>
+      <td>${c.flag} ${c.name}</td>
+      <td class="time-cell" data-tz-table="${c.tz}">${formatTimeStr(t)}</td>
+      <td data-tz-table-date="${c.tz}">${formatDate(t)}</td>
+      <td>${diffLabel(diff)}</td>
+      <td>${day ? "☀️ Día" : "🌙 Noche"}</td>
+    </tr>`;
+    }).join("");
 }
 
+// ── Render all ─────────────────────────────────────────────
 function renderAll() {
     renderCards();
     renderTable();
+    renderQuickChips();
 }
 
 // ── Live tick ──────────────────────────────────────────────
 function tick() {
     updateLocalClock();
 
-    // Update card times without full re-render
     selectedCities.forEach((c) => {
         const t = timeInTz(c.tz);
-        const timeEl = document.querySelector(`[data-tz="${c.tz}"]`);
-        if (timeEl) timeEl.textContent = formatTime(t);
+        const tf = formatTime(t);
+        const id = tzId(c.tz);
+
+        // Update digital time
+        const timeEl = document.querySelector(`.card-time[data-tz="${c.tz}"]`);
+        if (timeEl) {
+            timeEl.innerHTML = `${tf.h}:${tf.m}<span class="card-seconds">:${tf.s}</span>`;
+        }
+
+        // Update date
         const dateEl = document.querySelector(`[data-tz-date="${c.tz}"]`);
         if (dateEl) dateEl.textContent = formatDate(t);
-        const tableTime = document.querySelector(`[data-tz-table="${c.tz}"]`);
-        if (tableTime) tableTime.textContent = formatTime(t);
-        const tableDate = document.querySelector(`[data-tz-table-date="${c.tz}"]`);
-        if (tableDate) tableDate.textContent = formatDate(t);
+
+        // Update mini analog clock
+        const hEl = document.getElementById(`mh-${id}`);
+        const mEl = document.getElementById(`mm-${id}`);
+        const sEl = document.getElementById(`ms-${id}`);
+        if (hEl && mEl && sEl) setHands(hEl, mEl, sEl, t);
+
+        // Update table
+        const tblTime = document.querySelector(`[data-tz-table="${c.tz}"]`);
+        if (tblTime) tblTime.textContent = formatTimeStr(t);
+        const tblDate = document.querySelector(`[data-tz-table-date="${c.tz}"]`);
+        if (tblDate) tblDate.textContent = formatDate(t);
     });
 }
 
@@ -279,4 +397,15 @@ function tick() {
 loadCities();
 renderAll();
 updateLocalClock();
+
+// Initial analog hands (instant set before animation starts)
+selectedCities.forEach((c) => {
+    const t = timeInTz(c.tz);
+    const id = tzId(c.tz);
+    const hEl = document.getElementById(`mh-${id}`);
+    const mEl = document.getElementById(`mm-${id}`);
+    const sEl = document.getElementById(`ms-${id}`);
+    if (hEl && mEl && sEl) setHands(hEl, mEl, sEl, t);
+});
+
 setInterval(tick, 1000);

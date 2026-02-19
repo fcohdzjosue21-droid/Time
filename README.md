@@ -1,6 +1,6 @@
 # 🌍 World Clock — Comparador de Zonas Horarias
 
-Aplicación web que permite comparar la hora actual de diferentes ciudades del mundo en tiempo real.
+Aplicación web interactiva que permite comparar la hora actual de diferentes ciudades del mundo en tiempo real, con **relojes analógicos animados**, efectos visuales dinámicos y una interfaz premium.
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
@@ -10,26 +10,44 @@ Aplicación web que permite comparar la hora actual de diferentes ciudades del m
 
 ## ✨ Características
 
-- ⏱️ **Reloj local en vivo** — muestra tu hora, fecha y zona horaria actual
-- 🌎 **+30 ciudades** — Nueva York, Londres, Tokio, Sídney, Buenos Aires, y muchas más
-- 🔍 **Buscador inteligente** — filtra ciudades por nombre, país o zona horaria
-- 🃏 **Tarjetas interactivas** — cada ciudad muestra hora en vivo, fecha, indicador día/noche, diferencia horaria y offset UTC
-- 📊 **Tabla comparativa** — vista general de todas las ciudades seleccionadas
-- 💾 **Persistencia** — tus ciudades se guardan en `localStorage`
-- 🔄 **Actualización en tiempo real** — se actualiza cada segundo
-- 🎨 **Diseño premium** — tema oscuro con orbes animados, glassmorphism y micro-animaciones
+### 🎨 Interfaz Premium
+- Tema oscuro con **orbes de color animados** y grid sutil de fondo
+- **Glassmorphism** en tarjetas y componentes
+- Tipografía profesional (Inter + JetBrains Mono para dígitos)
+- Diseño 100% responsivo (desktop, tablet, móvil)
 
-## 📸 Vista previa
+### ⏱️ Relojes Animados
+- **Reloj analógico principal** con manecillas en tiempo real (horas, minutos, segundos)
+- **Mini reloj analógico** en cada tarjeta de ciudad
+- **Dígitos con animación pop** — cada cambio de segundo genera un efecto visual
+- **Dos puntos parpadeantes** `:` entre horas, minutos y segundos
+- Indicador de **pulso verde** (en vivo)
 
-| Reloj local | Tarjetas de ciudades | Tabla comparativa |
-|:-----------:|:-------------------:|:-----------------:|
-| Hora, fecha y zona horaria detectada automáticamente | Hora en vivo con badges de día/noche ☀️🌙 | Comparación de todas las ciudades en una tabla |
+### 🌎 Comparación Global
+- **+30 ciudades** de 6 continentes
+- **Buscador inteligente** con vista previa de hora en el dropdown
+- **Chips de acceso rápido** para ciudades populares
+- **Tarjetas interactivas** con:
+  - Hora digital + analógica en vivo
+  - Indicador de día/noche ☀️🌙 con degradado visual
+  - Diferencia horaria desde tu ubicación
+  - Offset UTC
+  - Animación de entrada escalonada
+- **Tabla comparativa** con todas las ciudades seleccionadas
+- **Persistencia** — tus ciudades se guardan automáticamente
+
+### �️ Micro-interacciones
+- Hover con elevación y borde luminoso en tarjetas
+- Barra superior de gradiente al pasar el cursor
+- Botón de eliminar con rotación animada
+- Dropdown con animación de deslizamiento
+- Tecla `Esc` para cerrar la búsqueda
 
 ## 🚀 Inicio rápido
 
 ### Opción 1 — Abrir directamente
 
-Simplemente abre `index.html` en tu navegador.
+Abre `index.html` en tu navegador.
 
 ### Opción 2 — Servidor local
 
@@ -41,7 +59,7 @@ npx http-server . -p 8080
 python -m http.server 8080
 ```
 
-Luego abre [http://localhost:8080](http://localhost:8080) en tu navegador.
+Luego abre [http://localhost:8080](http://localhost:8080).
 
 ## 🏙️ Ciudades disponibles
 
@@ -55,32 +73,34 @@ Luego abre [http://localhost:8080](http://localhost:8080) en tu navegador.
 
 ## 🛠️ Tecnologías
 
-- **HTML5** — estructura semántica
-- **CSS3** — animaciones, gradientes, glassmorphism, diseño responsivo
-- **JavaScript (Vanilla)** — lógica de zonas horarias con `Intl.DateTimeFormat`
-- **Google Fonts** — tipografía Inter
+| Tecnología | Uso |
+|-----------|-----|
+| HTML5 | Estructura semántica |
+| CSS3 | Animaciones, gradientes, glassmorphism, responsivo |
+| JavaScript (Vanilla) | Zonas horarias con `Intl.DateTimeFormat`, relojes analógicos |
+| Google Fonts | Inter (UI) + JetBrains Mono (dígitos) |
 
-## 📁 Estructura del proyecto
+## 📁 Estructura
 
 ```
 time/
 ├── index.html   # Página principal
-├── style.css    # Estilos y animaciones
-├── app.js       # Lógica de relojes y gestión de ciudades
-└── README.md    # Este archivo
+├── style.css    # Estilos, animaciones y tema
+├── app.js       # Lógica de relojes y gestión
+└── README.md    # Documentación
 ```
 
 ## 🤝 Contribuir
 
-1. Haz un fork del proyecto
+1. Fork del proyecto
 2. Crea tu rama (`git checkout -b feature/nueva-ciudad`)
-3. Haz commit de tus cambios (`git commit -m 'Agregar nueva ciudad'`)
-4. Push a la rama (`git push origin feature/nueva-ciudad`)
+3. Commit de tus cambios (`git commit -m 'Agregar nueva ciudad'`)
+4. Push (`git push origin feature/nueva-ciudad`)
 5. Abre un Pull Request
 
 ## 📄 Licencia
 
-Este proyecto está bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+MIT — Consulta el archivo [LICENSE](LICENSE) para detalles.
 
 ---
 
